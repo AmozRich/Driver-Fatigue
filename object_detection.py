@@ -25,12 +25,13 @@ class ObjectDetector:
     def scan_frame(self, frame):
         """
         Called 30-60 times a second by the main loop. 
-        Instantly hands off a copy of the frame to the background thread without blocking.
+        Only copies the frame when the background thread is ready for a new one.
         Returns the most recently completed YOLO result.
         """
         with self.lock:
-            # We copy the frame so OpenCV can keep updating the original safely
-            self.latest_frame = frame.copy()
+            # Only copy if the thread has consumed the previous frame
+            if self.latest_frame is None:
+                self.latest_frame = frame.copy()
             current_detection = self.last_detection
             
         return current_detection

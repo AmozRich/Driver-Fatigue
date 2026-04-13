@@ -1,4 +1,3 @@
-import cv2
 import numpy as np
 import time
 from collections import deque
@@ -263,7 +262,7 @@ class FatigueDetector:
         """Sets customized, driver-specific thresholds."""
         # Fix the Talking=Yawning bug using a safe ceiling/floor.
         protected_ear = min(max(new_ear, 0.15), 0.25)
-        protected_mar = max(new_mar, 0.35) # Lowered floor from 0.45 so average mouths can still trigger Yawn
+        protected_mar = max(new_mar, 0.35)
         
         print(f"Calibration applied: EAR={protected_ear}, MAR={protected_mar}, Bounds={bounds}")
         self.ear_threshold = protected_ear
@@ -271,11 +270,29 @@ class FatigueDetector:
         
         # Override the thresholds with a slight margin
         if "Left" in bounds:
-            self.head_left_ratio = bounds["Left"] * 0.8  # trigger slightly before they reach max
+            self.head_left_ratio = bounds["Left"] * 0.8
         if "Right" in bounds:
             self.head_right_ratio = bounds["Right"] * 0.8
         if "Down" in bounds:
             self.head_down_ratio = bounds["Down"] * 0.8
+        
+        # Reset ALL accumulated state so the user starts clean after calibration
+        self.fatigue_score = 0.0
+        self.closed_eyes_frames = 0
+        self.yawn_frames = 0
+        self.head_tilt_frames = 0
+        self.blink_active_frames = 0
+        self.distracted_gaze_frames = 0
+        self.blink_timestamps.clear()
+        self.ear_history.clear()
+        self.mar_history.clear()
+        for key in self.event_flags:
+            self.event_flags[key] = False
+        for key in self.event_cooldowns:
+            self.event_cooldowns[key] = 0.0
+        self.last_natural_decay_time = time.time()
+        self.last_hyper_blink_time = time.time()
+        print("All counters reset. Monitoring starts fresh.")
 
     def get_head_ratios(self, landmarks):
         """Returns the proportion of left/right and top/bottom distances to determine bounds."""

@@ -1,12 +1,12 @@
 import numpy as np
 
-# Config Constants (Optimized for ~15 FPS overhead from AI)
+# Config Constants (Tuned for ~30 FPS with threaded YOLO)
 EAR_THRESHOLD = 0.22        # If lower than this, eyes are closed
 MAR_THRESHOLD = 0.5         # If greater than this, yawning is detected
-DROWSINESS_FRAMES = 20      # (~1.5 seconds) Prolonged closure triggers sleep warning
-SLOW_BLINK_FRAMES = 8       # (~0.5s) Blinks taking longer indicates drowsiness
-YAWN_FRAMES = 10            # (~0.6s) Yawn persist
-HEAD_TILT_FRAMES = 20       # (~1.5s) Head tilt persist
+DROWSINESS_FRAMES = 45      # (~1.5s at 30fps) Prolonged closure triggers sleep warning
+SLOW_BLINK_FRAMES = 12      # (~0.4s at 30fps) Slow blinks indicate drowsiness
+YAWN_FRAMES = 20            # (~0.7s at 30fps) Yawn must persist to count
+HEAD_TILT_FRAMES = 40       # (~1.3s at 30fps) Head tilt must persist to count
 FATIGUE_SCORE_LIMIT = 5.0   # Threshold for full driver fatigue alert
 
 # Landmarks mapping for MediaPipe Face Mesh

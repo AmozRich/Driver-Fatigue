@@ -3,421 +3,598 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADAS Control Center</title>
+    <title>ADAS — Driver Monitoring System</title>
+    <meta name="description" content="Advanced Driver Assistance System — real-time fatigue monitoring and session analytics.">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
         :root {
-            --bg-color: #0b0710;
-            --primary: #9d4edd;
-            --secondary: #5a189a;
-            --surface: rgba(36, 15, 60, 0.4);
-            --border: rgba(157, 78, 221, 0.2);
-            --text-main: #f8f9fa;
-            --text-muted: #adb5bd;
+            --bg: #0a0a0b;
+            --surface: #141416;
+            --surface-hover: #1a1a1e;
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.12);
+            --accent: #a78bfa;
+            --accent-dim: rgba(167, 139, 250, 0.08);
+            --accent-glow: rgba(167, 139, 250, 0.15);
+            --text: #fafafa;
+            --text-secondary: #71717a;
+            --text-tertiary: #52525b;
+            --danger: #f87171;
+            --success: #34d399;
+            --radius: 12px;
         }
 
         body {
-            background-color: var(--bg-color);
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(90, 24, 154, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(157, 78, 221, 0.1) 0px, transparent 50%);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
             height: 100vh;
+            display: flex;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Glassmorphic Side Panel */
+        /* ─── Sidebar ─── */
         .sidebar {
-            width: 320px;
-            background: rgba(20, 10, 30, 0.6);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid var(--border);
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.2);
-        }
-
-        h1, h2, h3 {
-            margin: 0;
-            font-weight: 700;
-        }
-
-        h1 {
-            font-size: 1.7rem;
-            background: linear-gradient(135deg, #e0aaff, #9d4edd);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
-        }
-
-        .launch-btn {
-            background: linear-gradient(135deg, var(--secondary), var(--primary));
-            color: white;
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 1.2rem;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 25px rgba(90, 24, 154, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .launch-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 30px rgba(157, 78, 221, 0.5);
-            border-color: rgba(255,255,255,0.3);
-        }
-        
-        .launch-btn:active {
-            transform: translateY(1px);
-        }
-
-        /* Session List */
-        .session-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 0.6rem;
-            overflow-y: auto;
-            flex-grow: 1;
-            padding-right: 10px;
-        }
-
-        .session-list::-webkit-scrollbar { width: 6px; }
-        .session-list::-webkit-scrollbar-track { background: transparent; }
-        .session-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-        .session-item {
-            background: rgba(255,255,255, 0.02);
-            border: 1px solid rgba(255,255,255,0.05);
-            padding: 1rem 1.2rem;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .session-item:hover {
-            background: rgba(157, 78, 221, 0.1);
-            border-color: var(--primary);
-            color: var(--text-main);
-            transform: translateX(4px);
-        }
-        
-        .session-item.active {
-            background: linear-gradient(90deg, rgba(157, 78, 221, 0.2), transparent);
-            border-left: 3px solid var(--primary);
-            color: white;
-        }
-
-        /* Main Dashboard */
-        .main-content {
-            flex-grow: 1;
-            padding: 3rem 4rem;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        .chart-container {
+            width: 300px;
+            min-width: 300px;
             background: var(--surface);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 2rem;
-            flex-grow: 1;
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            min-height: 450px;
-            margin-top: 2rem;
-            box-shadow: inset 0 0 40px rgba(90, 24, 154, 0.05);
+            padding: 2rem 1.5rem;
+            gap: 2rem;
         }
 
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-top: 2.5rem;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, var(--surface), rgba(20, 10, 30, 0.2));
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border);
-            padding: 1.8rem;
-            border-radius: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stat-card::after {
-            content: '';
-            position: absolute;
-            top: 0; right: 0; width: 100px; height: 100px;
-            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
-            opacity: 0.1;
-            border-radius: 50%;
-            transform: translate(30%, -30%);
-        }
-
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(to right, #fff, #e0aaff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .empty-state {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: var(--text-muted);
-            font-size: 1.2rem;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        #alertContainer {
-            position: fixed;
-            top: 30px;
-            right: 30px;
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
-            font-weight: 600;
-            transform: translateX(150%);
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1000;
+        .logo {
             display: flex;
             align-items: center;
             gap: 12px;
         }
-        #alertContainer.show {
-            transform: translateX(0);
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-text h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: var(--text);
+        }
+
+        .logo-text span {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+        }
+
+        #launchBtn {
+            width: 100%;
+            padding: 14px 20px;
+            background: var(--accent);
+            color: #0a0a0b;
+            border: none;
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        #launchBtn:hover {
+            background: #c4b5fd;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
+        }
+
+        #launchBtn:active {
+            transform: translateY(0);
+        }
+
+        .section-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-tertiary);
+            font-weight: 600;
+        }
+
+        .session-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 6px;
+        }
+
+        .session-list::-webkit-scrollbar { width: 4px; }
+        .session-list::-webkit-scrollbar-track { background: transparent; }
+        .session-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .session-item {
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 450;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .session-item::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-tertiary);
+            flex-shrink: 0;
+            transition: background 0.15s ease;
+        }
+
+        .session-item:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .session-item.active {
+            background: var(--accent-dim);
+            color: var(--accent);
+            border-color: rgba(167, 139, 250, 0.15);
+        }
+
+        .session-item.active::before {
+            background: var(--accent);
+        }
+
+        /* ─── Main Content ─── */
+        .main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 3rem 4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .main::-webkit-scrollbar { width: 6px; }
+        .main::-webkit-scrollbar-track { background: transparent; }
+        .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .page-header h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-top: 6px;
+            font-weight: 400;
+        }
+
+        /* ─── Stat Cards ─── */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .stat {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat:hover {
+            border-color: var(--border-hover);
+            box-shadow: 0 0 30px var(--accent-dim);
+        }
+
+        .stat-label {
+            font-size: 0.72rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: var(--text);
+        }
+
+        .stat-value.accent {
+            color: var(--accent);
+        }
+
+        .stat-value.danger {
+            color: var(--danger);
+        }
+
+        .stat-value.success {
+            color: var(--success);
+        }
+
+        /* ─── Chart ─── */
+        .chart-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            flex: 1;
+            min-height: 380px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-title .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        .chart-inner {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* ─── Empty State ─── */
+        .empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-tertiary);
+            gap: 16px;
+        }
+
+        .empty-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .empty p {
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        /* ─── Toast ─── */
+        #toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--surface);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            color: var(--success);
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(120%);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 999;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* ─── Hidden Helpers ─── */
+        .hidden { display: none !important; }
+
+        /* ─── Animated accent bar ─── */
+        .accent-bar {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease infinite;
+            border-radius: 2px;
+            margin-top: -4px;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: -200% 0; }
+            50% { background-position: 200% 0; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in {
+            animation: fadeIn 0.4s ease forwards;
         }
     </style>
 </head>
 <body>
 
-    <div id="alertContainer">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-        <span>System Launched Successfully!</span>
+    <!-- Toast -->
+    <div id="toast">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span>Monitoring system launched</span>
     </div>
 
+    <!-- Sidebar -->
     <aside class="sidebar">
-        <div>
-            <h1>ADAS Core</h1>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top:0.5rem">Driver Monitoring System Dashboard</p>
+        <div class="logo">
+            <div class="logo-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            </div>
+            <div class="logo-text">
+                <h1>ADAS Core</h1>
+                <span>Driver Monitor</span>
+            </div>
         </div>
-        
-        <button class="launch-btn" onclick="launchSystem()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polygon points="10 8 16 12 10 16 10 8"></polygon>
-            </svg>
+
+        <button id="launchBtn" onclick="launchSystem()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             START MONITORING
         </button>
-        
-        <h3 style="margin-top: 2rem; color: var(--primary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8">Session History</h3>
-        <ul class="session-list" id="sessionList">
-            <!-- Populated by JS -->
-        </ul>
+
+        <span class="section-label">Sessions</span>
+        <ul class="session-list" id="sessionList"></ul>
     </aside>
 
-    <main class="main-content">
-        <div>
-            <h2 id="sessionTitle" style="font-size: 2rem;">Overview Analytics</h2>
-            <p style="color: var(--text-muted); font-size: 1.1rem; margin-top: 0.5rem">Select a session from the sidebar to review your driving metrics.</p>
+    <!-- Main -->
+    <main class="main" id="mainContent">
+        <div class="page-header">
+            <h2 id="pageTitle">Analytics</h2>
+            <div class="accent-bar"></div>
+            <p id="pageSubtitle">Select a session to view driving metrics</p>
         </div>
 
-        <div class="stat-grid" id="statGrid" style="display: none; transform: translateY(20px); opacity: 0; transition: all 0.5s ease; animation: fadeInUp 0.5s forwards;">
-            <div class="stat-card">
-                <span class="stat-value" id="statMaxFatigue">0.0</span>
-                <span style="color: var(--text-muted); font-size: 0.95rem; font-weight: 500;">Highest Fatigue Score</span>
+        <!-- Stats (hidden until session selected) -->
+        <div class="stats hidden" id="statsGrid">
+            <div class="stat">
+                <div class="stat-label">Peak Fatigue</div>
+                <div class="stat-value danger" id="statPeak">—</div>
             </div>
-            <div class="stat-card">
-                <span class="stat-value" id="statDistractions">0</span>
-                <span style="color: var(--text-muted); font-size: 0.95rem; font-weight: 500;">Phone/Bottle Distractions</span>
+            <div class="stat">
+                <div class="stat-label">Avg Fatigue</div>
+                <div class="stat-value accent" id="statAvg">—</div>
             </div>
-            <div class="stat-card">
-                <span class="stat-value" id="statBlinks">0</span>
-                <span style="color: var(--text-muted); font-size: 0.95rem; font-weight: 500;">Avg Blinks per Minute</span>
+            <div class="stat">
+                <div class="stat-label">Distractions</div>
+                <div class="stat-value" id="statDistractions">—</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Avg Blinks/min</div>
+                <div class="stat-value success" id="statBlinks">—</div>
             </div>
         </div>
 
-        <div class="chart-container">
-            <div id="emptyChartState" class="empty-state">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; color: var(--primary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                <span>Awaiting session selection...</span>
+        <!-- Chart -->
+        <div class="chart-wrap">
+            <!-- Empty state -->
+            <div class="empty" id="emptyState">
+                <div class="empty-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--text-tertiary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </div>
+                <p>No session selected</p>
             </div>
-            <canvas id="fatigueChart" style="display: none;"></canvas>
+            <!-- Chart (hidden until session selected) -->
+            <div class="hidden" id="chartArea" style="flex:1; display:flex; flex-direction:column;">
+                <div class="chart-title"><span class="dot"></span> Fatigue Score Timeline</div>
+                <div class="chart-inner">
+                    <canvas id="fatigueChart"></canvas>
+                </div>
+            </div>
         </div>
     </main>
 
-    <style>
-        @keyframes fadeInUp {
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
-
     <script>
-        let myChart = null;
+        let chart = null;
 
+        // ─── Load sessions ───
         fetch('/api/logs')
-            .then(res => res.json())
+            .then(r => r.json())
             .then(files => {
                 const list = document.getElementById('sessionList');
+                if (files.length === 0) {
+                    list.innerHTML = '<li style="color:var(--text-tertiary);font-size:0.8rem;padding:10px 14px;">No sessions yet</li>';
+                    return;
+                }
                 files.forEach(file => {
                     const li = document.createElement('li');
                     li.className = 'session-item';
-                    
-                    // Format filename (session_2026-04-13_13-14-24.csv) -> 2026-04-13 13:14:24
-                    let niceName = file.replace('session_', '').replace('.csv', '');
-                    niceName = niceName.replace('_', ' at ').replace(/-/g, '/');
-                    // quick fix for time hyphens
-                    const parts = niceName.split(' at ');
-                    if(parts.length > 1) {
-                        parts[1] = parts[1].replace(/\//g, ':');
-                        niceName = parts[0] + ' - ' + parts[1];
-                    }
-                    
-                    li.textContent = niceName;
+                    li.textContent = formatSessionName(file);
                     li.onclick = () => {
                         document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
                         li.classList.add('active');
-                        loadSession(file, niceName);
+                        loadSession(file);
                     };
                     list.appendChild(li);
                 });
             });
 
+        function formatSessionName(filename) {
+            // session_2026-04-13_15-27-20.csv → Apr 13, 2026 · 15:27
+            const match = filename.match(/session_(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})/);
+            if (!match) return filename;
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const [, y, m, d, h, min] = match;
+            return `${months[parseInt(m)-1]} ${parseInt(d)}, ${y} · ${h}:${min}`;
+        }
+
         function launchSystem() {
+            const btn = document.getElementById('launchBtn');
+            btn.textContent = 'Launching…';
+            btn.disabled = true;
+
             fetch('/api/launch')
-                .then(res => res.json())
-                .then(data => {
-                    const alert = document.getElementById('alertContainer');
-                    alert.classList.add('show');
-                    setTimeout(() => alert.classList.remove('show'), 3500);
+                .then(r => r.json())
+                .then(() => {
+                    const toast = document.getElementById('toast');
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 3000);
+                    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> START MONITORING`;
+                    btn.disabled = false;
+                })
+                .catch(() => {
+                    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> START MONITORING`;
+                    btn.disabled = false;
                 });
         }
 
-        function loadSession(filename, niceName) {
+        function loadSession(filename) {
             fetch(`/api/logs/${filename}`)
-                .then(res => res.json())
+                .then(r => r.json())
                 .then(data => {
-                    document.getElementById('emptyChartState').style.display = 'none';
-                    document.getElementById('fatigueChart').style.display = 'block';
-                    document.getElementById('statGrid').style.display = 'grid';
-                    document.getElementById('sessionTitle').textContent = `Log: ${niceName}`;
+                    document.getElementById('pageTitle').textContent = formatSessionName(filename);
+                    document.getElementById('pageSubtitle').textContent = `${data.length} data points recorded`;
 
-                    renderChart(data);
+                    // Show UI
+                    document.getElementById('emptyState').classList.add('hidden');
+                    const chartArea = document.getElementById('chartArea');
+                    chartArea.classList.remove('hidden');
+                    chartArea.style.display = 'flex';
+                    const grid = document.getElementById('statsGrid');
+                    grid.classList.remove('hidden');
+                    grid.classList.add('animate-in');
+
                     renderStats(data);
+                    renderChart(data);
                 });
         }
 
         function renderStats(data) {
-            let maxF = 0;
-            let disCount = 0;
-            let totalBlinks = 0;
-            let inDistraction = false;
+            let maxF = 0, totalF = 0, disCount = 0, totalBlinks = 0, inDis = false;
 
             data.forEach(row => {
-                const fScore = parseFloat(row.Fatigue_Score);
-                if (fScore > maxF) maxF = fScore;
-                
-                totalBlinks += parseInt(row.Blinks_Per_Min);
+                const f = parseFloat(row.Fatigue_Score) || 0;
+                if (f > maxF) maxF = f;
+                totalF += f;
+                totalBlinks += parseInt(row.Blinks_Per_Min) || 0;
 
                 const obj = row.Distraction_Object;
-                if (obj !== "None" && !inDistraction) {
-                    disCount++;
-                    inDistraction = true;
-                } else if (obj === "None") {
-                    inDistraction = false;
-                }
+                if (obj && obj !== 'None' && !inDis) { disCount++; inDis = true; }
+                else if (!obj || obj === 'None') { inDis = false; }
             });
 
-            const avgBlinks = data.length > 0 ? (totalBlinks / data.length).toFixed(0) : 0;
+            const avgF = data.length > 0 ? (totalF / data.length) : 0;
+            const avgB = data.length > 0 ? (totalBlinks / data.length) : 0;
 
-            document.getElementById('statMaxFatigue').textContent = maxF.toFixed(1);
+            document.getElementById('statPeak').textContent = maxF.toFixed(1);
+            document.getElementById('statAvg').textContent = avgF.toFixed(1);
             document.getElementById('statDistractions').textContent = disCount;
-            document.getElementById('statBlinks').textContent = avgBlinks;
+            document.getElementById('statBlinks').textContent = avgB.toFixed(0);
         }
 
         function renderChart(data) {
             const ctx = document.getElementById('fatigueChart').getContext('2d');
-            
-            const labels = data.map(d => d.Timestamp);
-            const fatigueScores = data.map(d => parseFloat(d.Fatigue_Score));
-            
-            // Plot warnings/alerts on the same chart
-            const alerts = data.map(d => d.Status === "DROWSINESS ALERT" ? parseFloat(d.Fatigue_Score) : null);
 
-            if (myChart) {
-                myChart.destroy();
+            // Downsample if too many points for performance
+            let sampled = data;
+            if (data.length > 600) {
+                const step = Math.ceil(data.length / 600);
+                sampled = data.filter((_, i) => i % step === 0);
             }
 
-            Chart.defaults.color = '#adb5bd';
+            const labels = sampled.map(d => d.Timestamp);
+            const scores = sampled.map(d => parseFloat(d.Fatigue_Score) || 0);
+            const alerts = sampled.map(d => d.Status === 'DROWSINESS ALERT' ? (parseFloat(d.Fatigue_Score) || 0) : null);
+
+            if (chart) chart.destroy();
+
+            Chart.defaults.color = '#71717a';
             Chart.defaults.font.family = 'Inter';
 
-            myChart = new Chart(ctx, {
+            chart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels,
                     datasets: [
                         {
                             label: 'Fatigue Score',
-                            data: fatigueScores,
-                            borderColor: '#9d4edd',
-                            backgroundColor: (context) => {
-                                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                                gradient.addColorStop(0, 'rgba(157, 78, 221, 0.4)');
-                                gradient.addColorStop(1, 'rgba(157, 78, 221, 0.01)');
-                                return gradient;
+                            data: scores,
+                            borderColor: '#a78bfa',
+                            backgroundColor: (ctx) => {
+                                const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
+                                g.addColorStop(0, 'rgba(167, 139, 250, 0.25)');
+                                g.addColorStop(1, 'rgba(167, 139, 250, 0.0)');
+                                return g;
                             },
-                            borderWidth: 3,
+                            borderWidth: 2,
                             fill: true,
                             tension: 0.4,
                             pointRadius: 0,
-                            pointHoverRadius: 6
+                            pointHoverRadius: 5,
+                            pointHoverBackgroundColor: '#a78bfa'
                         },
                         {
-                            label: 'Critical Alerts',
+                            label: 'Critical Alert',
                             data: alerts,
-                            backgroundColor: '#ff0a54',
-                            pointBackgroundColor: '#ff0a54',
-                            pointBorderColor: 'white',
+                            backgroundColor: '#f87171',
+                            pointBackgroundColor: '#f87171',
+                            pointBorderColor: '#0a0a0b',
                             pointBorderWidth: 2,
-                            pointRadius: 6,
-                            pointStyle: 'circle',
+                            pointRadius: 5,
                             showLine: false
                         }
                     ]
@@ -425,38 +602,43 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
+                    interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: {
                             position: 'top',
-                            labels: { 
-                                color: '#f8f9fa',
+                            align: 'end',
+                            labels: {
+                                color: '#71717a',
                                 usePointStyle: true,
-                                boxWidth: 8
+                                boxWidth: 6,
+                                padding: 20,
+                                font: { size: 11, weight: 500 }
                             }
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(20, 10, 30, 0.9)',
-                            titleColor: '#fff',
-                            bodyColor: '#e0aaff',
-                            borderColor: 'rgba(157, 78, 221, 0.3)',
+                            backgroundColor: '#1a1a1e',
+                            titleColor: '#fafafa',
+                            bodyColor: '#a78bfa',
+                            borderColor: 'rgba(167,139,250,0.15)',
                             borderWidth: 1,
                             padding: 12,
-                            boxPadding: 6
+                            boxPadding: 6,
+                            cornerRadius: 8,
+                            titleFont: { weight: 600, size: 12 },
+                            bodyFont: { size: 12 }
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            grid: { color: 'rgba(255,255,255,0.03)' },
-                            border: { dash: [4, 4] }
+                            grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false },
+                            ticks: { padding: 10, font: { size: 11 } },
+                            border: { display: false }
                         },
                         x: {
                             grid: { display: false },
-                            ticks: { maxTicksLimit: 8, maxRotation: 0 }
+                            ticks: { maxTicksLimit: 8, maxRotation: 0, padding: 10, font: { size: 11 } },
+                            border: { display: false }
                         }
                     }
                 }

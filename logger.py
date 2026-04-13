@@ -44,6 +44,7 @@ class SessionLogger:
             state.get("status", "Alert"),
             state.get("distraction", "None")
         ])
+        self.file.flush()
         
     def close(self):
         if self.file and not self.file.closed:
